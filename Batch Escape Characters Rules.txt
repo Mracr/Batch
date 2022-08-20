@@ -1,0 +1,24 @@
+Escape Characters
+Character to be escaped	Escape Sequence	Remark
+%	%%	May not always be required in doublequoted strings, just try
+^	^^	May not always be required in doublequoted strings, but it won't hurt
+&	^&
+<	^<
+>	^>
+|	^|
+'	^'	Required only in the FOR /F "subject" (i.e. between the parenthesis), unless backq is used
+`	^`	Required only in the FOR /F "subject" (i.e. between the parenthesis), if backq is used
+,	^,	Required only in the FOR /F "subject" (i.e. between the parenthesis), even in doublequoted strings
+;	^;
+=	^=
+(	^(
+)	^)
+!	^^!	Required only when delayed variable expansion is active
+"	""	Required only inside the search pattern of FIND
+\	\\	Required only inside the regex pattern of FINDSTR
+[	\[
+]	\]
+"	\"
+.	\.
+*	\*
+?	\?
