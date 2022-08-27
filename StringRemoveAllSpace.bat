@@ -4,17 +4,14 @@
 ECHO.
 ECHO [NOTICE]: Removes all space from the string
 ECHO.
-ECHO [USAGE]: %~nx0  {Variate1 ^| "String1"}  {Variate2 ^| "String2"}
+ECHO [USAGE]: %~nx0  {Variate ^| "String"}
 ECHO.
-ECHO=             Variate     The name of a string variable declared with the 'SET' command
-ECHO=             "String"    A string with double quotes
+ECHO=         Variate     The name of a string variable declared with the 'SET' command
 ECHO.
-ECHO=         Remove string all spaces in within, leading and trailing.
+ECHO=         "String"    A string with double quotes
 ECHO.
-ECHO=         If the string contains special characters: "^^!^^%%*^|^<^>" and so on,
-ECHO=         please use ^<Variate^> to pass the string rather than ^<"String"^>
-ECHO.
-ECHO=         If %%ERRORLEVEL%% == 1    Task execution failure   
+ECHO=         Global environment variable %%ERRORLEVEL%% indicate Task execution result
+ECHO=             1  String1 is NULL
 GOTO :END
 :startWork
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -27,38 +24,70 @@ GOTO :END
 SETLOCAL EnableDelayedExpansion
 
 
-IF "%~1" EQU ""        GOTO :help  
-IF "%~1" EQU "?"       GOTO :help
-IF "%~1" EQU "/?"      GOTO :help
+:::
+::: Parse Command Line Argc Begin
+:::
+SET /A gHelp=0
+SET /A eStrs=0
+:ParseCommandLine
+IF "%~1" NEQ "" (
+    IF /I "!gHelp!" EQU "0" (
+        IF /I "%~1" EQU "?"          SET /A gHelp=1
+        IF /I "%~1" EQU "/"          SET /A gHelp=1
+        IF /I "%~1" EQU "-"          SET /A gHelp=1
+        IF /I "%~1" EQU "/?"         SET /A gHelp=1
+        IF /I "%~1" EQU "-?"         SET /A gHelp=1
+        IF /I "%~1" EQU "-h"         SET /A gHelp=1
+        IF /I "%~1" EQU "/h"         SET /A gHelp=1
+        IF /I "!gHelp!" EQU "1"      GOTO :help
+    )
 
-
-IF "!%~1!" NEQ "" (
-    SET  VarA=!%~1!
-    CALL :RemoveAllSpace VarA
-    GOTO :END
+    IF /I "!eStrs!" EQU "0" (
+	IF "%~1" NEQ ""   (
+	    IF "!%~1!" NEQ "" (
+        	SET string=!%~1!
+	    ) ELSE (
+		SET string=%~1
+	    )
+	    SET /A eStrs=1
+	) ELSE (
+	    GOTO :help
+	)
+    )
+) ELSE (
+    SET /A Value=!gHelp! + !eStrs!
+    IF "!Value!" EQU "0"   GOTO :help
 )
 
 
-IF "!%~1!" EQU "" (
-    SET  VarB=%~1
-    CALL :RemoveAllSpace VarB
-    GOTO :END
-)
+::: 
+::: Adjust ERROR 
+:::
+IF "%string%" EQU ""             GOTO :ERROR1
 
 
+:::
+::: Call Function
+:::
+CALL :RemoveAllSpace string
+
+
+:::
+::: Program Finish
+:::
 GOTO :END
 
 
 ::::::::::::::::::::::::::::::::::::::::::: CODE :::::::::::::::::::::::::::::::::::::::::::
 :RemoveAllSpace
- IF   "%~1" EQU ""    GOTO :ERROR
+ IF   "%~1" EQU ""    GOTO :ERROR1
  SET  %~1=!%~1: =!
  ECHO !%~1!
  GOTO :EOF
 
 
 :::::::::::::::::::::::::::::::::::::::::: ERROR ::::::::::::::::::::::::::::::::::::::::::
-:ERROR
+:ERROR1
  EXIT /B 1
 
 

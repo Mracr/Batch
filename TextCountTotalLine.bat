@@ -6,12 +6,13 @@ ECHO [NOTICE]: Count the number of lines of content in a text file
 ECHO.
 ECHO [USAGE]: %~nx0  {Variate ^| "FilePath"}
 ECHO.
-ECHO=             Variate     The variate name of a file path that defined with the 'SET' command
-ECHO=             "FilePath"  A file path with double quotes
+ECHO=         Variate     The variate name of a file path that defined with the 'SET' command
 ECHO.
-ECHO=         If a line has only spaces, the line is also count 
+ECHO=         "FilePath"  A file path with double quotes
 ECHO.
-ECHO=         If %%ERRORLEVEL%% == 1    Task execution failure   
+ECHO=         Global environment variable %%ERRORLEVEL%% indicate Task execution result
+ECHO=             1  "filePath" is NULL
+ECHO=             2  file NOT Exist
 GOTO :END
 :startWork
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -23,33 +24,65 @@ GOTO :END
 SETLOCAL EnableDelayedExpansion
 
 
-IF "%~1" EQU ""        GOTO :help
-IF "%~1" EQU "?"       GOTO :help
-IF "%~1" EQU "/?"      GOTO :help
+:::
+::: Parse Command Line Argc Begin
+:::
+SET /A gHelp=0
+SET /A gPath=0
+:ParseCommandLine
+IF "%~1" NEQ "" (
+    IF /I "!gHelp!" EQU "0" (
+        IF /I "%~1" EQU "?"          SET /A gHelp=1
+        IF /I "%~1" EQU "/"          SET /A gHelp=1
+        IF /I "%~1" EQU "-"          SET /A gHelp=1
+        IF /I "%~1" EQU "/?"         SET /A gHelp=1
+        IF /I "%~1" EQU "-?"         SET /A gHelp=1
+        IF /I "%~1" EQU "-h"         SET /A gHelp=1
+        IF /I "%~1" EQU "/h"         SET /A gHelp=1
+        IF /I "!gHelp!" EQU "1"      GOTO :help
+    )
 
-
-IF "!%~1!" NEQ "" (
-    FOR /F "delims=" %%1 IN ("!%~1!") DO     SET filePath=%%~f1
-    IF NOT EXIST "!filePath!"                GOTO :ERROR
-    CALL :TotalRowCount "filePath"
-    GOTO :END
+    IF /I "!gPath!" EQU "0" (
+	IF "%~1" NEQ ""   (
+	    IF "!%~1!" NEQ "" (
+        	SET filePath=!%~1!
+	    ) ELSE (
+		SET filePath=%~1
+	    )
+	    SET /A gPath=1
+	) ELSE (
+	    GOTO :help
+	)
+    )
+) ELSE (
+    SET /A Value=!gHelp! + !gPath!
+    IF "!Value!" EQU "0"   GOTO :help
 )
 
 
-IF "!%~1!" EQU "" (
-    SET filePath=%~f1
-    IF NOT EXIST "!filePath!"                GOTO :ERROR
-    CALL :TotalRowCount "filePath"
-    GOTO :END
-)
+::: 
+::: Adjust ERROR 
+:::
+IF "%filePath%" EQU ""                 GOTO :ERROR1
+IF NOT EXIST "!filePath!"              GOTO :ERROR2  
 
 
+
+:::
+::: Call Function
+:::
+CALL :TotalRowCount "filePath"
+
+
+:::
+::: Program Finish
+:::
 GOTO :END
 
 
 :::::::::::::::::::::::::::::::::::::::::: CODE ::::::::::::::::::::::::::::::::::::::::::
 :TotalRowCount
- IF "%~1" EQU ""    GOTO :ERROR
+ IF "%~1" EQU ""    GOTO :ERROR1
  SET /A count=0
  FOR /F "delims=" %%i IN ('TYPE "!%~1!"') DO SET /A count+=1 > nul
  ECHO %count%
@@ -57,8 +90,11 @@ GOTO :END
 
 
 :::::::::::::::::::::::::::::::::::::::::: ERROR ::::::::::::::::::::::::::::::::::::::::::
-:ERROR
+:ERROR1
  EXIT /B 1
+
+:ERROR2
+ EXIT /B 2
 
 
 ::::::::::::::::::::::::::::::::::::::::::: END ::::::::::::::::::::::::::::::::::::::::::::
